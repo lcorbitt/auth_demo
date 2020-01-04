@@ -19,6 +19,7 @@ app.set('view engine', 'ejs');
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(bodyParser.urlencoded({ extended: true }));
+passport.use(new localStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
@@ -44,9 +45,24 @@ app.get('/', (req, res) => {
 	res.render('home');
 });
 
-app.get('/secret', (req, res) => {
+app.get('/secret', isLoggedIn, (req, res) => {
 	res.render('secret');
 });
+
+// SHOW LOGIN FORM
+app.get('/login', (req, res) => {
+	res.render('login');
+});
+
+// USER LOGIN
+app.post(
+	'/login',
+	passport.authenticate('local', {
+		successRedirect: '/secret',
+		failureRedirect: 'login'
+	}),
+	(req, res) => {}
+);
 
 // SHOW SIGN-UP FORM
 app.get('/sign-up', (req, res) => {
@@ -70,6 +86,20 @@ app.post('/sign-up', (req, res) => {
 		}
 	});
 });
+
+// USER LOGOUT
+app.get('/logout', (req, res) => {
+	req.logout();
+	console.log('You were logged out.');
+	res.redirect('/');
+});
+
+function isLoggedIn(req, res, next) {
+	if (req.isAuthenticated()) {
+		return next();
+	}
+	res.redirect('/login');
+}
 
 // SERVER LISTENER
 app.listen(3000, () => {
